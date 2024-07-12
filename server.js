@@ -13,7 +13,7 @@ app.use(express.json());
 mongoose.connect("mongodb://localhost:27017/whetherdata");
 
 const getCityFromCoordinates = async (latitude, longitude) => {
-  const apiKey = "f8e56271245bfbe1c06faa73b24fc908";
+  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
   const url = `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}`;
 
   try {
@@ -45,7 +45,7 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-app.put("/api/user/:email/location", async (req, res) => {
+app.put("/api/users/:email/location", async (req, res) => {
   const { email } = req.params;
   const { latitude, longitude } = req.body;
 
@@ -65,17 +65,23 @@ app.put("/api/user/:email/location", async (req, res) => {
 app.get("/api/users/:email/weather", async (req, res) => {
   const { email } = req.params;
   const { date } = req.query;
+
+  
+  console.log(email);
+  
+  console.log(date);
   try {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).send("User not found");
     }
-    const weatherData = user.weatherReports.filter(
+    const weatherData = user.weatherReport.filter(
       (report) => report.date === date
     );
     res.status(200).send(weatherData);
   } catch (error) {
     res.status(500).send(error);
+    console.log(error);
   }
 });
 
@@ -108,7 +114,7 @@ async function getWeatherData(latitude, longitude) {
   return response.data;
 }
 
-function sendEmail(email, weatherData) {
+const sendEmail = (email, weatherData)=> {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -133,9 +139,7 @@ function sendEmail(email, weatherData) {
   });
 }
 
-app.get("/", (req, res) => {
-  res.json("Hello");
-});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
